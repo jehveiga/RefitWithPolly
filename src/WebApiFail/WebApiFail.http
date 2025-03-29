@@ -1,0 +1,6 @@
+@WebApiFail_HostAddress = http://localhost:5048
+
+GET {{WebApiFail_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
