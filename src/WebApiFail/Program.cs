@@ -1,11 +1,13 @@
-var builder = WebApplication.CreateBuilder(args);
+using System.Net;
+
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -16,29 +18,27 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+int failureCount = 0; // Variável global para contar as falhas
 
-app.MapGet("/weatherforecast", () =>
+app.MapGet("/test", () =>
 {
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
+    // Incrementa o contador de falhas
+    if (failureCount < 3)
+    {
+        failureCount++;
+        Console.WriteLine($"Falha #{failureCount}");
+        return Results.StatusCode((int)HttpStatusCode.BadGateway); // Retorna erro 429
+    }
 
-app.Run();
+    Console.WriteLine("Resposta bem-sucedida após falhas");
+    return Results.Ok("Resposta bem-sucedida!");
+});
 
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+app.MapPost("/reset", () =>
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+    failureCount = 0;
+    Console.WriteLine("Contador de falhas resetado.");
+    return Results.Ok("Contador resetado.");
+});
+
+await app.RunAsync();
